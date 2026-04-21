@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using SharpDX.Direct3D9;
 using System;
+using System.Linq;
 
 namespace Sorting_algorithm_Visual
 {
@@ -9,20 +11,28 @@ namespace Sorting_algorithm_Visual
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+        private KeyboardState _previousKeyboardState;
+        private KeyboardState _currentKeyboardState;
 
         private Sprite[] sprites;
-        private int[] values = new int[26] { 5, 3, 8, 1, 2, 7, 4, 6, 9, 10, 7, 6, 2, 11, 13, 22, 23,56, 43, 4, 53, 72, 36, 28, 40, 3 };
+        private int[] values;
 
         private int i = 0;
         private int j = 0;
+        private int listSize = 20;
         private bool sorting = false;
+        private bool scrambleing = false;
 
         private float timer = 0f;
         private float delay = 0.01f;
+        private float scrambleDelay = 0.5f;
 
         private int CurrentIndex = -1;
         private int NextIndex = -1;
         private int sortedIndex = -1;
+
+        private bool AutoSort = false;
+        private bool IsScrambled = true;
 
         private enum SortState
         {
@@ -52,66 +62,112 @@ namespace Sorting_algorithm_Visual
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            _graphics.PreferredBackBufferWidth =1500;
         }
 
-        protected override void LoadContent()
-        {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            Texture2D texture = new Texture2D(GraphicsDevice, 15, 1);
+        protected override void LoadContent() 
+        { 
+            _spriteBatch = new SpriteBatch(GraphicsDevice); 
+            GenerateNumbers(); 
+            Texture2D texture = new Texture2D(GraphicsDevice, 15, 1); 
             Color[] data = new Color[15];
             for (int i = 0; i < data.Length; i++)
+            {
                 data[i] = Color.White;
-
+            }
             texture.SetData(data);
-
             sprites = new Sprite[values.Length];
 
-            int spacing = 30;
-            int startX = (GraphicsDevice.Viewport.Width - values.Length * spacing) / 2;
+            int screenWidth = GraphicsDevice.Viewport.Width;
+            int screenHeight = GraphicsDevice.Viewport.Height;
+            int spacing = screenWidth / values.Length;
 
-            for (int i = 0; i < sprites.Length; i++)
+            int maxValue = values.Max();
+            float heightScale;
+            if (maxValue > 0)
             {
-                int Height = values[i] * 10;
-                sprites[i] = new Sprite(
-                    texture,
-                    new Vector2(startX + i * spacing, 450 - Height),
-                    Height
-                );
-
-                sprites[i].TargetPosition = sprites[i].Position;
+                heightScale = (float)screenHeight / maxValue;
+            }
+            else
+            {
+                heightScale = 1f;
+            }
+            int startX = (screenWidth - (spacing * values.Length)) / 2;
+            for (int i = 0; i < sprites.Length; i++) 
+            {
+                int height = (int)(values[i] * heightScale);
+                int startY = (GraphicsDevice.Viewport.Height - height); 
+                sprites[i] = new Sprite(texture, new Vector2(startX + i * spacing, startY), height); 
+                sprites[i].TargetPosition = sprites[i].Position; } 
+        }
+        private void GenerateNumbers()
+        {
+            values = new int[listSize];
+            Random rand = new Random();
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = rand.Next(1, int.MaxValue);
             }
         }
 
         protected override void Update(GameTime gameTime)
         {
-            KeyboardState BoardState = Keyboard.GetState();
+            _previousKeyboardState = _currentKeyboardState;
+            _currentKeyboardState = Keyboard.GetState();
 
-            if (BoardState.IsKeyDown(Keys.Escape))
+            if (_currentKeyboardState.IsKeyDown(Keys.Escape))
             {
                 Exit();
             }
-            if(BoardState.IsKeyDown(Keys.A) && !sorting)
+            if (AutoSort)
             {
-                _order = SortOrder.Ascending;
+                if (!sorting)
+                {
+                    if (!IsScrambled)
+                    {
+                        ScrambleSprites();
+                        IsScrambled = true;
+                        scrambleing = true;
+                    }
+                    else
+                    {
+                        Random rand = new Random();
+                        _algorithm = (SortAlgorithm)rand.Next(0, Enum.GetValues(typeof(SortAlgorithm)).Length);
+                        _order = (SortOrder)rand.Next(0, Enum.GetValues(typeof(SortOrder)).Length);
+                        StartSorting();
+                    }
+                }
             }
-            if (BoardState.IsKeyDown(Keys.D) && !sorting)
+            else
             {
-                _order = SortOrder.Descending;
+                if (_currentKeyboardState.IsKeyDown(Keys.A) && !_previousKeyboardState.IsKeyDown(Keys.A) && !sorting)
+                {
+                    _order = SortOrder.Ascending;
+                }
+                if (_currentKeyboardState.IsKeyDown(Keys.D) && !_previousKeyboardState.IsKeyDown(Keys.D) && !sorting)
+                {
+                    _order = SortOrder.Descending;
+                }
+                if (_currentKeyboardState.IsKeyDown(Keys.S)&&!sorting && !scrambleing)
+                {
+                    ScrambleSprites();
+                    scrambleing = true;
+                    IsScrambled = true;
+                }
+                if (_currentKeyboardState.IsKeyDown(Keys.B) && !sorting)
+                {
+                    StartSorting();
+                    _algorithm = SortAlgorithm.BubbleSort;
+                }
+                if (_currentKeyboardState.IsKeyDown(Keys.I) && !sorting)
+                {
+                    StartSorting();
+                    _algorithm = SortAlgorithm.InsertionSort;
+                }
             }
-            if(BoardState.IsKeyDown(Keys.S) && !sorting)
+            if(_currentKeyboardState.IsKeyDown(Keys.U) && !_previousKeyboardState.IsKeyDown(Keys.U))
             {
-                ScrambleSprites();
-            }
-            if (BoardState.IsKeyDown(Keys.B) && !sorting)
-            {
-                StartSorting();
-                _algorithm = SortAlgorithm.BubbleSort; 
-            }
-            if (BoardState.IsKeyDown(Keys.I) && !sorting)
-            {
-                StartSorting();
-                _algorithm = SortAlgorithm.InsertionSort;
+                AutoSort = !AutoSort;
             }
 
             // Run step with delay
@@ -130,6 +186,15 @@ namespace Sorting_algorithm_Visual
                             InterstionSort();
                             break;
                     }
+                    timer = 0f;
+                }
+            }
+            if(scrambleing)
+            {
+                timer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (timer >= scrambleDelay)
+                {
+                    scrambleing = false;
                     timer = 0f;
                 }
             }
@@ -266,6 +331,7 @@ namespace Sorting_algorithm_Visual
             {
                 sprites[k].Color = Color.Green;
             }
+            IsScrambled = false;
         }
         private bool CheckEndSort()
         {
@@ -299,12 +365,27 @@ namespace Sorting_algorithm_Visual
         }
         private void UpdateTargets()
         {
-            int spacing = 30;
-            int startX = (GraphicsDevice.Viewport.Width - sprites.Length * spacing) / 2;
+            int screenWidth = GraphicsDevice.Viewport.Width;
+            int screenHeight = GraphicsDevice.Viewport.Height;
 
-            for (int i = 0; i < sprites.Length; i++)
+            int count = sprites.Length;
+
+            if (count == 0)
             {
-                sprites[i].TargetPosition = new Vector2(startX + i * spacing, 450 - sprites[i].Hight);
+                return;
+            }
+            int spacing = screenWidth / count;
+
+            int startX = (screenWidth - (spacing * count)) / 2;
+
+            for (int i = 0; i < count; i++)
+            {
+                int startY = screenHeight - sprites[i].Hight;
+
+                sprites[i].TargetPosition = new Vector2(
+                    startX + i * spacing,
+                    startY
+                );
             }
         }
 
