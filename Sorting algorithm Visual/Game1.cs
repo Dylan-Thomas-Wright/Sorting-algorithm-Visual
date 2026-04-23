@@ -1,14 +1,27 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Microsoft.VisualBasic.Logging;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SharpDX.Direct3D9;
 using System;
+using System.Runtime.InteropServices;
 using System.Linq;
 
 namespace Sorting_algorithm_Visual
 {
     public class Game1 : Game
     {
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X, int Y, int cx, int cy,
+        uint uFlags
+    );
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private KeyboardState _previousKeyboardState;
@@ -33,6 +46,12 @@ namespace Sorting_algorithm_Visual
 
         private bool AutoSort = false;
         private bool IsScrambled = true;
+        private bool StepByStep = false;
+
+        private bool partitioning = false;
+        private int LeftPointer = -1;
+        private int RightPointer = -1;
+        private int PivotIndex = -1;
 
         private enum SortState
         {
@@ -43,7 +62,8 @@ namespace Sorting_algorithm_Visual
         private enum SortAlgorithm
         {
             BubbleSort,
-            InsertionSort
+            InsertionSort,
+            QuickSort
         }
 
         private enum SortOrder
@@ -62,11 +82,13 @@ namespace Sorting_algorithm_Visual
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            _graphics.PreferredBackBufferWidth =1500;
+            _graphics.PreferredBackBufferWidth =1000;
+            
         }
 
         protected override void LoadContent() 
-        { 
+        {
+
             _spriteBatch = new SpriteBatch(GraphicsDevice); 
             GenerateNumbers(); 
             Texture2D texture = new Texture2D(GraphicsDevice, 15, 1); 
@@ -99,6 +121,23 @@ namespace Sorting_algorithm_Visual
                 int startY = (GraphicsDevice.Viewport.Height - height); 
                 sprites[i] = new Sprite(texture, new Vector2(startX + i * spacing, startY), height); 
                 sprites[i].TargetPosition = sprites[i].Position; } 
+        }
+        protected override void Initialize()
+        {
+            base.Initialize();
+            MakeTopMost();
+        }
+        private void MakeTopMost()
+        {
+            if (Window != null && Window.Handle != IntPtr.Zero)
+            {
+                SetWindowPos(
+                    Window.Handle,
+                    HWND_TOPMOST,
+                    0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE
+                );
+            }
         }
         private void GenerateNumbers()
         {
@@ -140,6 +179,17 @@ namespace Sorting_algorithm_Visual
             }
             else
             {
+                if (StepByStep)
+                {
+                    if (sorting)
+                    {
+                        sorting = false;
+                    }
+                    if(_currentKeyboardState.IsKeyDown(Keys.Space) && !_previousKeyboardState.IsKeyDown(Keys.Space) && !sorting)
+                    {
+                        sorting = true;
+                    }
+                }
                 if (_currentKeyboardState.IsKeyDown(Keys.A) && !_previousKeyboardState.IsKeyDown(Keys.A) && !sorting)
                 {
                     _order = SortOrder.Ascending;
@@ -147,6 +197,14 @@ namespace Sorting_algorithm_Visual
                 if (_currentKeyboardState.IsKeyDown(Keys.D) && !_previousKeyboardState.IsKeyDown(Keys.D) && !sorting)
                 {
                     _order = SortOrder.Descending;
+                }
+                if (_currentKeyboardState.IsKeyDown(Keys.L) && !_previousKeyboardState.IsKeyDown(Keys.L))
+                {
+                    if (StepByStep)
+                    {
+                        sorting = true;
+                    }
+                    StepByStep = !StepByStep;
                 }
                 if (_currentKeyboardState.IsKeyDown(Keys.S)&&!sorting && !scrambleing)
                 {
@@ -163,6 +221,11 @@ namespace Sorting_algorithm_Visual
                 {
                     StartSorting();
                     _algorithm = SortAlgorithm.InsertionSort;
+                }
+                if(_currentKeyboardState.IsKeyDown(Keys.Q) && !sorting)
+                {
+                    StartQuickSort(sprites);
+                    _algorithm = SortAlgorithm.QuickSort;
                 }
             }
             if(_currentKeyboardState.IsKeyDown(Keys.U) && !_previousKeyboardState.IsKeyDown(Keys.U))
@@ -184,6 +247,9 @@ namespace Sorting_algorithm_Visual
                             break;
                         case SortAlgorithm.InsertionSort:
                             InterstionSort();
+                            break;
+                        case SortAlgorithm.QuickSort:
+                            QuickSortStep(sprites);
                             break;
                     }
                     timer = 0f;
@@ -318,6 +384,10 @@ namespace Sorting_algorithm_Visual
                 sortedIndex = sprites.Length - i;
             }
         }
+        private void QuickSortStep(Sprite[] sprites)
+        {
+            sorting = false;
+        }
 
         private void Swap(int a, int b)
         {
@@ -337,16 +407,19 @@ namespace Sorting_algorithm_Visual
         {
             if (i >= sprites.Length)
             {
-                sorting = false;
-
-                foreach (Sprite sprite in sprites)
-                {
-                    sprite.Color = Color.Green;
-                }
+                EndSort();
 
                 return true;
             }
             return false;
+        }
+        private void EndSort()
+        {
+            sorting = false;
+            foreach (Sprite sprite in sprites)
+            {
+                sprite.Color = Color.Green;
+            }
         }
         private void ResetColors()
         {
@@ -354,6 +427,14 @@ namespace Sorting_algorithm_Visual
             {
                 sprite.Color = Color.White;
             }
+        }
+        private void StartQuickSort(Sprite[] sprites)
+        {
+            sorting = true;
+            LeftPointer = 0;
+            RightPointer = sprites.Length - 1;
+            partitioning = false;
+            i = LeftPointer;
         }
         private void StartSorting()
         {
