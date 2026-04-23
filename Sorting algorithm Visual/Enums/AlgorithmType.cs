@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sorting_algorithm_Visual
+namespace Sorting_algorithm_Visual.Enums
 {
-    abstract class Sorting_Algorithm
+    public enum AlgorithmType
     {
-        public abstract void Sort();
+        BubbleSort,
+        InsertionSort
     }
 }

@@ -3,9 +3,11 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SharpDX.Direct3D9;
+using Sorting_algorithm_Visual.Enums;
+using Sorting_algorithm_Visual.Sorting_Algorithms;
 using System;
-using System.Runtime.InteropServices;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Sorting_algorithm_Visual
 {
@@ -24,14 +26,12 @@ namespace Sorting_algorithm_Visual
         private const uint SWP_NOSIZE = 0x0001;
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        private KeyboardState _previousKeyboardState;
-        private KeyboardState _currentKeyboardState;
 
+        private InputManager _inputManager= new InputManager();
+        private SortingAlgorithm _currentAlgorithm;
         private Sprite[] sprites;
         private int[] values;
 
-        private int i = 0;
-        private int j = 0;
         private int listSize = 20;
         private bool sorting = false;
         private bool scrambleing = false;
@@ -39,43 +39,12 @@ namespace Sorting_algorithm_Visual
         private float timer = 0f;
         private float delay = 0.01f;
         private float scrambleDelay = 0.5f;
-
-        private int CurrentIndex = -1;
-        private int NextIndex = -1;
-        private int sortedIndex = -1;
-
         private bool AutoSort = false;
         private bool IsScrambled = true;
         private bool StepByStep = false;
 
-        private bool partitioning = false;
-        private int LeftPointer = -1;
-        private int RightPointer = -1;
-        private int PivotIndex = -1;
-
-        private enum SortState
-        {
-            Comparing,
-            Swapping
-        }
-
-        private enum SortAlgorithm
-        {
-            BubbleSort,
-            InsertionSort,
-            QuickSort
-        }
-
-        private enum SortOrder
-        {
-            Ascending,
-            Descending
-        }
-
         private SortOrder _order = SortOrder.Ascending;
-        private SortAlgorithm _algorithm;
-
-        private SortState state = SortState.Comparing;
+        private AlgorithmType _algorithm;
 
         public Game1()
         {
@@ -151,300 +120,184 @@ namespace Sorting_algorithm_Visual
 
         protected override void Update(GameTime gameTime)
         {
-            _previousKeyboardState = _currentKeyboardState;
-            _currentKeyboardState = Keyboard.GetState();
-
-            if (_currentKeyboardState.IsKeyDown(Keys.Escape))
-            {
-                Exit();
-            }
-            if (AutoSort)
-            {
-                if (!sorting)
-                {
-                    if (!IsScrambled)
-                    {
-                        ScrambleSprites();
-                        IsScrambled = true;
-                        scrambleing = true;
-                    }
-                    else
-                    {
-                        Random rand = new Random();
-                        _algorithm = (SortAlgorithm)rand.Next(0, Enum.GetValues(typeof(SortAlgorithm)).Length);
-                        _order = (SortOrder)rand.Next(0, Enum.GetValues(typeof(SortOrder)).Length);
-                        StartSorting();
-                    }
-                }
-            }
-            else
-            {
-                if (StepByStep)
-                {
-                    if (sorting)
-                    {
-                        sorting = false;
-                    }
-                    if(_currentKeyboardState.IsKeyDown(Keys.Space) && !_previousKeyboardState.IsKeyDown(Keys.Space) && !sorting)
-                    {
-                        sorting = true;
-                    }
-                }
-                if (_currentKeyboardState.IsKeyDown(Keys.A) && !_previousKeyboardState.IsKeyDown(Keys.A) && !sorting)
-                {
-                    _order = SortOrder.Ascending;
-                }
-                if (_currentKeyboardState.IsKeyDown(Keys.D) && !_previousKeyboardState.IsKeyDown(Keys.D) && !sorting)
-                {
-                    _order = SortOrder.Descending;
-                }
-                if (_currentKeyboardState.IsKeyDown(Keys.L) && !_previousKeyboardState.IsKeyDown(Keys.L))
-                {
-                    if (StepByStep)
-                    {
-                        sorting = true;
-                    }
-                    StepByStep = !StepByStep;
-                }
-                if (_currentKeyboardState.IsKeyDown(Keys.S)&&!sorting && !scrambleing)
-                {
-                    ScrambleSprites();
-                    scrambleing = true;
-                    IsScrambled = true;
-                }
-                if (_currentKeyboardState.IsKeyDown(Keys.B) && !sorting)
-                {
-                    StartSorting();
-                    _algorithm = SortAlgorithm.BubbleSort;
-                }
-                if (_currentKeyboardState.IsKeyDown(Keys.I) && !sorting)
-                {
-                    StartSorting();
-                    _algorithm = SortAlgorithm.InsertionSort;
-                }
-                if(_currentKeyboardState.IsKeyDown(Keys.Q) && !sorting)
-                {
-                    StartQuickSort(sprites);
-                    _algorithm = SortAlgorithm.QuickSort;
-                }
-            }
-            if(_currentKeyboardState.IsKeyDown(Keys.U) && !_previousKeyboardState.IsKeyDown(Keys.U))
-            {
-                AutoSort = !AutoSort;
-            }
-
-            // Run step with delay
-            if (sorting)
-            {
-                timer += (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-                if (timer >= delay)
-                {
-                    switch (_algorithm)
-                    {
-                        case SortAlgorithm.BubbleSort:
-                            BubbleSortStep();
-                            break;
-                        case SortAlgorithm.InsertionSort:
-                            InterstionSort();
-                            break;
-                        case SortAlgorithm.QuickSort:
-                            QuickSortStep(sprites);
-                            break;
-                    }
-                    timer = 0f;
-                }
-            }
-            if(scrambleing)
-            {
-                timer += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                if (timer >= scrambleDelay)
-                {
-                    scrambleing = false;
-                    timer = 0f;
-                }
-            }
-
-            foreach (Sprite sprite in sprites)
+            HandleInput();
+            HandleSorting(gameTime);
+            HandleScrambling(gameTime);
+            
+            foreach(Sprite sprite in sprites)
             {
                 sprite.Update(gameTime);
             }
 
             base.Update(gameTime);
         }
-        private void InterstionSort()
+        private void HandleInput()
         {
-            ResetColors();
+            _inputManager.Update();
+            if (_inputManager.IsKeyPressed(Keys.Escape))
+                Exit();
 
-            bool endSort = CheckEndSort();
-            if (endSort) return;
-
-            CurrentIndex = i;
-            NextIndex = i - 1;
-
-            HighlightSorted();
-
-
-            sprites[CurrentIndex].Color = Color.Red;
-            if (NextIndex >= 0)
+            if (_inputManager.IsKeyPressed(Keys.U))
             {
-                sprites[NextIndex].Color = Color.Orange;
+                AutoSort = !AutoSort;
             }
 
-            if (state == SortState.Comparing)
+            if (AutoSort)
             {
-                bool SwapNeeded = false;
-                switch (_order)
-                {
-                    case SortOrder.Ascending:
-                        SwapNeeded = j > 0 && sprites[j].Hight < sprites[j - 1].Hight;
-                        break;
-                    case SortOrder.Descending:
-                        SwapNeeded = j > 0 && sprites[j].Hight > sprites[j - 1].Hight;
-                        break;
-                }
-
-                if (SwapNeeded)
-                {
-                    state = SortState.Swapping;
-                }
-                else
-                {
-                    i++;
-                    j = i;
-                }
+                HandleAutoSort();
+                return;
             }
-            else if (state == SortState.Swapping)
+
+            if (StepByStep && sorting)
             {
-                sprites[j].Color = Color.Green;
-                sprites[j - 1].Color = Color.Green;
-                Swap(j, j - 1);
-                j--;
-                UpdateTargets();
-                state = SortState.Comparing;
+                sorting = false;
+            }
+
+            if (_inputManager.IsKeyPressed(Keys.Space) && StepByStep)
+            {
+                sorting = true;
+            }
+
+            if (_inputManager.IsKeyPressed(Keys.A) && !sorting)
+            {
+                _order = SortOrder.Ascending;
+            }
+
+            if (_inputManager.IsKeyPressed(Keys.D) && !sorting)
+            {
+                _order = SortOrder.Descending;
+            }
+            if (_inputManager.IsKeyPressed(Keys.L))
+            {
+                if (StepByStep)
+                {
+                    sorting = true;
+                }
+                StepByStep = !StepByStep;
+            }
+            if (_inputManager.IsKeyDown(Keys.S) && !sorting && !scrambleing)
+            {
+                StartScramble();
+            }
+            if (_inputManager.IsKeyDown(Keys.B) && !sorting)
+            {
+                StartAlgorithm(AlgorithmType.BubbleSort);
+            }
+
+            if (_inputManager.IsKeyDown(Keys.I) && !sorting)
+            {
+                StartAlgorithm(AlgorithmType.InsertionSort);
             }
         }
-        private void BubbleSortStep()
+        private void HandleAutoSort()
         {
-            ResetColors();
+            if (sorting) return;
 
-            bool endSort =CheckEndSort();
-            if (endSort) return;
-
-            CurrentIndex = j;
-            NextIndex = j + 1;
-
-            HighlightSorted();
-
-            sprites[CurrentIndex].Color = Color.Red;
-            sprites[NextIndex].Color = Color.Orange;
-
-            if (state == SortState.Comparing)
+            if (!IsScrambled)
             {
-                bool SwapNeeded = false;
-                switch (_order)
-                {
-                    case SortOrder.Ascending:
-                        SwapNeeded = sprites[j].Hight > sprites[j + 1].Hight;
-                        break;
-                    case SortOrder.Descending:
-                        SwapNeeded = sprites[j].Hight < sprites[j + 1].Hight;
-                        break;
-                }
-                if (SwapNeeded)
-                {
-                    state = SortState.Swapping;
-                }
-                else
-                {
-                    NextBubbleStep();
-                }
+                StartScramble();
             }
-            else if (state == SortState.Swapping)
+            else
             {
-                sprites[j].Color = Color.Green;
-                sprites[j + 1].Color = Color.Green;
+                Random rand = new Random();
 
-                Swap(j, j + 1);
-                UpdateTargets();
+                _algorithm = (AlgorithmType)rand.Next(Enum.GetValues(typeof(AlgorithmType)).Length);
+                _order = (SortOrder)rand.Next(Enum.GetValues(typeof(SortOrder)).Length);
 
-                state = SortState.Comparing;
-                NextBubbleStep();
+                StartAlgorithm(_algorithm);
             }
         }
-
-        private void NextBubbleStep()
+        private void StartAlgorithm(AlgorithmType type)
         {
-            j++;
+            _algorithm = type;
 
-            if (j >= sprites.Length - i - 1)
+            _currentAlgorithm = type switch
             {
-                j = 0;
-                i++;
-                sortedIndex = sprites.Length - i;
+                AlgorithmType.BubbleSort => new BubbleSort(),
+                AlgorithmType.InsertionSort => new InterstionSort(),
+                _ => null
+            };
+
+            _currentAlgorithm?.Initialize(sprites, _order);
+
+            sorting = true;
+        }
+        private void HandleSorting(GameTime gameTime)
+        {
+            if (!sorting || _currentAlgorithm == null)
+                return;
+
+            timer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            if (timer >= delay)
+            {
+                _currentAlgorithm.SortByStep(GraphicsDevice);
+                timer = 0f;
+
+                if (_currentAlgorithm.IsFinished)
+                {
+                    sorting = false;
+                    IsScrambled = false;
+                }
             }
         }
-        private void QuickSortStep(Sprite[] sprites)
-        {
-            sorting = false;
-        }
 
-        private void Swap(int a, int b)
+        private void StartScramble()
+        {
+            scrambleing = true;
+            IsScrambled = true;
+            foreach (Sprite sprite in sprites)
+            {
+                sprite.Color = Color.White;
+            }
+            Random rand = new Random();
+
+            for (int i = sprites.Length - 1; i > 0; i--)
+            {
+                int j = rand.Next(i + 1);
+
+                var temp = sprites[i];
+                sprites[i] = sprites[j];
+                sprites[j] = temp;
+            }
+
+            UpdateTargets(GraphicsDevice);
+        }
+        private void HandleScrambling(GameTime gameTime)
+        {
+            if (!scrambleing) return;
+
+            timer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            if (timer >= scrambleDelay)
+            {
+                scrambleing = false;
+                timer = 0f;
+            }
+        }
+        protected void Swap(int a, int b)
         {
             Sprite temp = sprites[a];
             sprites[a] = sprites[b];
             sprites[b] = temp;
         }
-        private void HighlightSorted()
-        {
-            for (int k = sprites.Length - 1; k >= sortedIndex; k--)
-            {
-                sprites[k].Color = Color.Green;
-            }
-            IsScrambled = false;
-        }
-        private bool CheckEndSort()
-        {
-            if (i >= sprites.Length)
-            {
-                EndSort();
 
-                return true;
-            }
-            return false;
-        }
-        private void EndSort()
-        {
-            sorting = false;
-            foreach (Sprite sprite in sprites)
-            {
-                sprite.Color = Color.Green;
-            }
-        }
-        private void ResetColors()
+        private void ScrambleSprites()
         {
             foreach (Sprite sprite in sprites)
             {
                 sprite.Color = Color.White;
             }
+
+            Random rand = new Random();
+            for (int i = sprites.Length - 1; i > 0; i--)
+            {
+                int j = rand.Next(0, i + 1);
+                Swap(i, j);
+            }
+            UpdateTargets(GraphicsDevice);
         }
-        private void StartQuickSort(Sprite[] sprites)
-        {
-            sorting = true;
-            LeftPointer = 0;
-            RightPointer = sprites.Length - 1;
-            partitioning = false;
-            i = LeftPointer;
-        }
-        private void StartSorting()
-        {
-            sorting = true;
-            i = 0;
-            j = 0;
-            sortedIndex = sprites.Length;
-            state = SortState.Comparing;
-        }
-        private void UpdateTargets()
+        public void UpdateTargets(GraphicsDevice GraphicsDevice)
         {
             int screenWidth = GraphicsDevice.Viewport.Width;
             int screenHeight = GraphicsDevice.Viewport.Height;
@@ -468,18 +321,6 @@ namespace Sorting_algorithm_Visual
                     startY
                 );
             }
-        }
-
-        private void ScrambleSprites()
-        {
-            ResetColors();
-            Random rand = new Random();
-            for (int i = sprites.Length - 1; i > 0; i--)
-            {
-                int j = rand.Next(0, i + 1);
-                Swap(i, j);
-            }
-            UpdateTargets();
         }
         protected override void Draw(GameTime gameTime)
         {
