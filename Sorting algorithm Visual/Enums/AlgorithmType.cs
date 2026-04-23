@@ -9,6 +9,7 @@ namespace Sorting_algorithm_Visual.Enums
     public enum AlgorithmType
     {
         BubbleSort,
-        InsertionSort
+        InsertionSort,
+        QuickSort
     }
 }
