@@ -12,13 +12,11 @@ namespace Sorting_algorithm_Visual
     {
         private int i;
         private int j;
-        private int sortedIndex;
         private SortState state;
         protected override void OnInitialize()
         {
             i = 1;
             j = i;
-            sortedIndex = -1;
             state = SortState.Comparing;
         }
         public override void SortByStep(GraphicsDevice graphics)
