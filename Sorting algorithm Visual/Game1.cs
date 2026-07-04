@@ -57,48 +57,82 @@ namespace Sorting_algorithm_Visual
             
         }
 
-        protected override void LoadContent() 
+        protected override void LoadContent()
         {
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            _spriteBatch = new SpriteBatch(GraphicsDevice); 
-            GenerateNumbers(); 
-            Texture2D texture = new Texture2D(GraphicsDevice, 15, 1); 
+            GenerateRandomNumbers();
+
+            Texture2D texture = GenerateSquareTexture(15);
+
+            CreateSprites(texture);
+        }
+        private void CreateSprites(Texture2D texture)
+        {
+            sprites = new Sprite[values.Length];
+
+            int screenWidth = GraphicsDevice.Viewport.Width;
+            int screenHeight = GraphicsDevice.Viewport.Height;
+
+            int spacing = CalculateSpacing(screenWidth);
+            float heightScale = CalculateHeightScale(screenHeight);
+            int startX = CalculateStartX(screenWidth, spacing);
+
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                sprites[i] = CreateSprite(texture, i, startX, spacing, heightScale);
+            }
+        }
+        private Sprite CreateSprite(Texture2D texture, int index, int startX, int spacing, float heightScale)
+        {
+            int height = (int)(values[index] * heightScale);
+            int startY = GraphicsDevice.Viewport.Height - height;
+
+            Sprite sprite = new Sprite(
+                texture,
+                new Vector2(startX + index * spacing, startY),
+                height);
+
+            sprite.TargetPosition = sprite.Position;
+
+            return sprite;
+        }
+        private int CalculateSpacing(int screenWidth)
+        {
+            return screenWidth / values.Length;
+        }
+
+        private float CalculateHeightScale(int screenHeight)
+        {
+            int maxValue = values.Max();
+
+            if (maxValue == 0)
+                return 1f;
+
+            return (float)screenHeight / maxValue;
+        }
+
+        private int CalculateStartX(int screenWidth, int spacing)
+        {
+            return (screenWidth - (spacing * values.Length)) / 2;
+        }
+        private Texture2D GenerateSquareTexture(int width)
+        {
+            Texture2D texture = new Texture2D(GraphicsDevice,width, 1);
             Color[] data = new Color[15];
             for (int i = 0; i < data.Length; i++)
             {
                 data[i] = Color.White;
             }
             texture.SetData(data);
-            sprites = new Sprite[values.Length];
-
-            int screenWidth = GraphicsDevice.Viewport.Width;
-            int screenHeight = GraphicsDevice.Viewport.Height;
-            int spacing = screenWidth / values.Length;
-
-            int maxValue = values.Max();
-            float heightScale;
-            if (maxValue > 0)
-            {
-                heightScale = (float)screenHeight / maxValue;
-            }
-            else
-            {
-                heightScale = 1f;
-            }
-            int startX = (screenWidth - (spacing * values.Length)) / 2;
-            for (int i = 0; i < sprites.Length; i++) 
-            {
-                int height = (int)(values[i] * heightScale);
-                int startY = (GraphicsDevice.Viewport.Height - height); 
-                sprites[i] = new Sprite(texture, new Vector2(startX + i * spacing, startY), height); 
-                sprites[i].TargetPosition = sprites[i].Position; } 
+            return texture;
         }
         protected override void Initialize()
         {
             base.Initialize();
-            MakeTopMost();
+            MakeTheScreenStayAtTop();
         }
-        private void MakeTopMost()
+        private void MakeTheScreenStayAtTop()
         {
             if (Window != null && Window.Handle != IntPtr.Zero)
             {
@@ -110,7 +144,7 @@ namespace Sorting_algorithm_Visual
                 );
             }
         }
-        private void GenerateNumbers()
+        private void GenerateRandomNumbers()
         {
             values = new int[listSize];
             Random rand = new Random();
