@@ -10,6 +10,6 @@ namespace Sorting_algorithm_Visual.Enums
     {
         BubbleSort,
         InsertionSort,
-        QuickSort
+        //QuickSort
     }
 }

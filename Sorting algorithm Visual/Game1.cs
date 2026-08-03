@@ -224,10 +224,10 @@ namespace Sorting_algorithm_Visual
             {
                 StartAlgorithm(AlgorithmType.InsertionSort);
             }
-            if(_inputManager.IsKeyDown(Keys.Q) && !sorting)
-            {
-                StartAlgorithm(AlgorithmType.QuickSort);
-            }
+            //if(_inputManager.IsKeyDown(Keys.Q) && !sorting)
+            //{
+            //    StartAlgorithm(AlgorithmType.QuickSort);
+            //}
         }
         private void HandleAutoSort()
         {
@@ -255,7 +255,7 @@ namespace Sorting_algorithm_Visual
             {
                 AlgorithmType.BubbleSort => new BubbleSort(),
                 AlgorithmType.InsertionSort => new InterstionSort(),
-                AlgorithmType.QuickSort => new QuickSort(),
+                //AlgorithmType.QuickSort => new QuickSort(),
                 _ => null
             };
 

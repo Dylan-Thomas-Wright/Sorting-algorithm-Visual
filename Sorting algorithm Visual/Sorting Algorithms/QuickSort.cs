@@ -8,16 +8,16 @@ using System.Threading.Tasks;
 
 namespace Sorting_algorithm_Visual
 {
-    internal class QuickSort : SortingAlgorithm
-    {
-        private int i;
-        private int j;
-        private SortState state;
-        protected override void OnInitialize()
-        {
-        }
-        public override void SortByStep(GraphicsDevice graphics, int? leftPointer, int? rightPointer)
-        {
-        }
-    }
+    //internal class QuickSort : SortingAlgorithm
+    //{
+    //    private int i;
+    //    private int j;
+    //    private SortState state;
+    //    protected override void OnInitialize()
+    //    {
+    //    }
+    //    public override void SortByStep(GraphicsDevice graphics, int? leftPointer, int? rightPointer)
+    //    {
+    //    }
+    //}
 }
