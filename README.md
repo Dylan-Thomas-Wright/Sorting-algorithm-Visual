@@ -27,7 +27,7 @@ The main goals of this project are to:
 The project currently includes visualisations for sorting algorithms such as:
 
 * Bubble Sort
-* [Add other implemented algorithms here]
+* Insertion Sort
 
 Each algorithm operates on a collection of values represented visually as blocks.
 
@@ -40,13 +40,13 @@ The application represents values as blocks with different heights.
 For example:
 
 ```text
-        █
-        █       █
-        █       █
-    █   █       █
-    █   █   █   █
-    █   █   █   █
-    █   █   █   █
+        █                 █
+        █       █         █   █
+        █       █         █   █
+    █   █       █         █   █   █
+    █   █   █   █  ────>  █   █   █   █
+    █   █   █   █         █   █   █   █
+    █   █   █   █         █   █   █   █
 ```
 
 As the algorithm runs, the blocks are compared and rearranged until the collection is sorted.
@@ -108,11 +108,8 @@ These are planned improvements rather than completed features.
 ### Algorithms
 
 * [ ] Add more sorting algorithms
-* [ ] Add insertion sort
-* [ ] Add selection sort
 * [ ] Add merge sort
 * [ ] Add quick sort
-* [ ] Compare algorithm performance
 
 ### Information & Statistics
 
@@ -154,7 +151,7 @@ Main Menu
               │
        ┌──────┴──────┐
        │             │
-    Compare        Swap
+    Compare──Draw───Swap
        │             │
        └──────┬──────┘
               │
