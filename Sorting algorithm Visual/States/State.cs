@@ -5,18 +5,11 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Sorting_algorithm_Visual.States
 {
-    internal abstract class State
+    internal interface IState
     {
-        protected Game1 Game { get; }
-        protected SpriteBatch SpriteBatch { get; }
-
-        protected State(Game1 game, SpriteBatch spriteBatch)
-        {
-            Game = game;
-            SpriteBatch = spriteBatch;
-        }
-
-        public abstract void Update(GameTime gameTime);
-        public abstract void Draw(GameTime gameTime);
+        public void Enter();
+        public void Exit();
+        public void Update(GameTime gameTime);
+        public void Draw(GameTime gameTime);
     }
 }
