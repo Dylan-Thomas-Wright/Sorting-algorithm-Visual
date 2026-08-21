@@ -3,16 +3,29 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Sorting_algorithm_Visual.States
 {
-    internal class MainMenuState:State
+    internal class MainMenuState:IState
     {
-        public MainMenuState(Game1 game, SpriteBatch spriteBatch) : base(game, spriteBatch)
+        public Game1 game1 { get; }
+        public GraphicsDevice GraphicsDevice { get; }
+        public SpriteBatch _spriteBatch { get; }
+        public GraphicsDeviceManager GraphicsDeviceManager { get; }
+        public GameWindow Window { get; }
+        public void Enter()
         {
+            // Implement main menu enter logic here
         }
-        public override void Update(GameTime gameTime)
+
+        public void Exit()
+        {
+            // Implement main menu exit logic here
+        }
+
+        public void Update(GameTime gameTime)
         {
             // Implement main menu update logic here
         }
-        public override void Draw(GameTime gameTime)
+
+        public void Draw(GameTime gameTime)
         {
             // Implement main menu drawing logic here
         }
