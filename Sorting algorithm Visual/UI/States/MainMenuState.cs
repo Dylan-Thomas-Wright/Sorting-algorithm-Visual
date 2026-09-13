@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.Collections.Generic;
 
 namespace Sorting_algorithm_Visual.States
 {
@@ -10,6 +11,10 @@ namespace Sorting_algorithm_Visual.States
         public SpriteBatch _spriteBatch { get; }
         public GraphicsDeviceManager GraphicsDeviceManager { get; }
         public GameWindow Window { get; }
+
+        public List<Button> buttons = new List<Button>();
+
+
         public MainMenuState(Game1 game1, GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, GraphicsDeviceManager graphicsDeviceManager, GameWindow window)
         {
             this.game1 = game1;

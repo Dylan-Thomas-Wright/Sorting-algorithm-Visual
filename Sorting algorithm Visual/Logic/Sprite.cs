@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 namespace Sorting_algorithm_Visual
 {
-    internal class Sprite
+    public class Sprite
     {
          public Texture2D Texture;
          public Vector2 Position;
@@ -19,11 +19,11 @@ namespace Sorting_algorithm_Visual
                 Position = position;
                 Hight = hight;
         }
-        public void Update(GameTime gameTime)
+        public virtual void Update(GameTime gameTime)
         {
             Position += (TargetPosition - Position) * 0.2f;
         }
-        public void Draw(SpriteBatch spriteBatch)
+        public virtual void Draw(SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(Texture, Rectangle, Color);
         }
