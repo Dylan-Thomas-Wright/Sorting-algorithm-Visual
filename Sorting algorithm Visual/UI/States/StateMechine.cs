@@ -3,7 +3,7 @@
 
 namespace Sorting_algorithm_Visual.States
 {
-    internal class StateMachine
+    public class StateMachine
     {
         private IState _currentState;
 

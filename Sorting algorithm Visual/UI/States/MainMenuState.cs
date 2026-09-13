@@ -10,8 +10,16 @@ namespace Sorting_algorithm_Visual.States
         public SpriteBatch _spriteBatch { get; }
         public GraphicsDeviceManager GraphicsDeviceManager { get; }
         public GameWindow Window { get; }
-        public void Enter()
+        public MainMenuState(Game1 game1, GraphicsDevice graphicsDevice, SpriteBatch spriteBatch, GraphicsDeviceManager graphicsDeviceManager, GameWindow window)
         {
+            this.game1 = game1;
+            this.GraphicsDevice = graphicsDevice;
+            this._spriteBatch = spriteBatch;
+            this.GraphicsDeviceManager = graphicsDeviceManager;
+            this.Window = window;
+        }
+        public void Enter()
+        { 
             // Implement main menu enter logic here
         }
 

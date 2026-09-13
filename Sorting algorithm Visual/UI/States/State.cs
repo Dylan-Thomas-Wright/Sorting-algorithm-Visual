@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Sorting_algorithm_Visual.States
 {
-    internal interface IState
+    public interface IState
     {
         public Game1 game1 { get; }
         public GraphicsDevice GraphicsDevice { get; }
